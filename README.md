@@ -172,14 +172,14 @@ The `_type` property on `TypedResult` can be used with `typeof` to get the `Resu
 ### Creating and Handling Results
 
 ```typescript
-import { Result, ok, err } from '@ls-stack/ts-result';
+import { Result } from 't-result';
 
 function parseNumber(input: string): Result<number, string> {
   const num = parseFloat(input);
   if (isNaN(num)) {
-    return err(`'${input}' is not a valid number.`);
+    return Result.err(`'${input}' is not a valid number.`);
   }
-  return ok(num);
+  return Result.ok(num);
 }
 
 const validResult = parseNumber('123.45');
@@ -202,7 +202,7 @@ try {
 ### Using `resultify`
 
 ```typescript
-import { resultify, unknownToError, Result } from '@ls-stack/ts-result';
+import { resultify, unknownToError, Result } from 't-result';
 
 // Synchronous function
 function riskySyncOperation(shouldFail: boolean): string {
@@ -261,7 +261,7 @@ testAsync();
 ### Using `unknownToError`
 
 ```typescript
-import { unknownToError } from '@ls-stack/ts-result';
+import { unknownToError } from 't-result';
 
 try {
   // Simulate an operation that might throw anything
@@ -285,7 +285,7 @@ try {
 ### Using `getOkErr` for Typed Results
 
 ```typescript
-import { Result, getOkErr } from '@ls-stack/ts-result';
+import { Result, getOkErr } from 't-result';
 
 type User = { id: number; name: string };
 type UserFetchError = { type: 'NotFound' | 'NetworkError'; message: string };
