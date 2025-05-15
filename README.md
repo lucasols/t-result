@@ -1,4 +1,4 @@
-# TS Result
+# T Result
 
 [![npm version](https://badge.fury.io/js/t-result.svg)](https://badge.fury.io/js/t-result)
 
