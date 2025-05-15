@@ -17,9 +17,7 @@ A TypeScript implementation of the Result pattern, providing a robust way to han
 ## Installation
 
 ```bash
-npm install t-result
-# or
-yarn add t-result
+pnpm add t-result
 ```
 
 ## Basic Usage
