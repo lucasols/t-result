@@ -1,6 +1,6 @@
 # TS Result
 
-[![npm version](https://badge.fury.io/js/%40ls-stack%2Fts-result.svg)](https://badge.fury.io/js/%40ls-stack%2Fts-result)
+[![npm version](https://badge.fury.io/js/t-result.svg)](https://badge.fury.io/js/t-result)
 
 A TypeScript implementation of the Result pattern, providing a robust way to handle operations that can succeed or fail, without relying on traditional try/catch blocks for expected errors.
 
@@ -17,15 +17,15 @@ A TypeScript implementation of the Result pattern, providing a robust way to han
 ## Installation
 
 ```bash
-npm install @ls-stack/ts-result
+npm install t-result
 # or
-yarn add @ls-stack/ts-result
+yarn add t-result
 ```
 
 ## Basic Usage
 
 ```typescript
-import { Result } from '@ls-stack/ts-result';
+import { Result } from 't-result';
 
 // Define a function that might fail
 function divide(
