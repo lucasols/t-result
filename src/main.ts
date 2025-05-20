@@ -41,10 +41,14 @@ type ResultMethods<T, E extends ResultValidErrors> = {
     ok: (value: T) => NewValue;
     err: (error: E) => NewError;
   }) => Result<NewValue, NewError>;
-  /** Calls a function if the result is Ok */
+  /** @deprecated use onOk instead */
   ifOk: (fn: (value: T) => void) => Result<T, E>;
-  /** Calls a function if the result is Err */
+  /** Calls a function if the result is Ok */
+  onOk: (fn: (value: T) => void) => Result<T, E>;
+  /** @deprecated use onErr instead */
   ifErr: (fn: (error: E) => void) => Result<T, E>;
+  /** Calls a function if the result is Err */
+  onErr: (fn: (error: E) => void) => Result<T, E>;
 };
 
 /**
@@ -161,6 +165,8 @@ export function ok(value: any = undefined): Ok<any> {
     mapOkAndErr,
     ifOk: okOnOk,
     ifErr: returnResult,
+    onOk: okOnOk,
+    onErr: returnResult,
   };
 
   return {
@@ -192,7 +198,9 @@ export function err<E extends ResultValidErrors>(error: E): Err<E> {
     mapErr: errMap,
     mapOkAndErr,
     ifOk: returnResult,
+    onOk: returnResult,
     ifErr: errOnErr,
+    onErr: errOnErr,
   };
 
   return {
@@ -425,4 +433,28 @@ function getOkErr<R extends Result<any, any>>(): TypedResult<
 function getOkErr<T, E extends ResultValidErrors = Error>(): TypedResult<T, E>;
 function getOkErr(): unknown {
   return typedResult;
+}
+
+export function isResult(
+  value: unknown,
+): value is Result<any, ResultValidErrors> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'ok' in value &&
+    typeof value.ok === 'boolean' &&
+    'error' in value &&
+    hasMethod(value, 'unwrapOrNull') &&
+    hasMethod(value, 'unwrapOr') &&
+    hasMethod(value, 'unwrap') &&
+    hasMethod(value, 'mapOk') &&
+    hasMethod(value, 'mapErr') &&
+    hasMethod(value, 'mapOkAndErr') &&
+    hasMethod(value, 'onOk') &&
+    hasMethod(value, 'onErr')
+  );
+}
+
+function hasMethod(value: Record<string, unknown>, method: string): boolean {
+  return method in value && typeof value[method] === 'function';
 }

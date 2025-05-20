@@ -8,7 +8,13 @@ import {
   type TestTypeIsEqual,
 } from '@ls-stack/utils/typingTestUtils';
 import { describe, expect, test } from 'vitest';
-import { Result, resultify, type GetTypedResult } from '../src/main';
+import {
+  isResult,
+  Result,
+  resultify,
+  type GetTypedResult,
+  type ResultValidErrors,
+} from '../src/main';
 
 const { expectType } = typingTest;
 
@@ -635,4 +641,25 @@ test('Allow readonly error types', () => {
   }
 
   expect(1).toEqual(1);
+});
+
+test('isResult', () => {
+  expect(isResult(Result.ok(1))).toBe(true);
+  expect(isResult(Result.err(new Error('Error')))).toBe(true);
+  expect(isResult(1)).toBe(false);
+  expect(isResult({})).toBe(false);
+  expect(isResult(null)).toBe(false);
+  expect(isResult(undefined)).toBe(false);
+  expect(isResult(true)).toBe(false);
+  expect(isResult(false)).toBe(false);
+  expect(isResult({ ok: true, value: 1 })).toBe(false);
+  expect(isResult({ ok: false, error: new Error('Error') })).toBe(false);
+
+  const result = Result.ok(1) as unknown;
+
+  if (isResult(result)) {
+    expectType<
+      TestTypeIsEqual<typeof result, Result<any, ResultValidErrors>>
+    >();
+  }
 });
