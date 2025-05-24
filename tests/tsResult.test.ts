@@ -276,6 +276,109 @@ describe('Result.map*', () => {
   });
 });
 
+describe('Result.mapToValue()', () => {
+  test('map ok result to value', () => {
+    const successDivision = divide(10, 2);
+
+    const result = successDivision.mapToValue({
+      ok: (value) => `Success: ${value}`,
+      err: (error) => new Error(`Mapped: ${error.message}`),
+    });
+
+    expectType<TestTypeIsEqual<typeof result, string | Error>>();
+    expect(result).toEqual('Success: 5');
+  });
+
+  test('map err result to value', () => {
+    const failureDivision = divide(10, 0);
+
+    const result = failureDivision.mapToValue({
+      ok: (value) => `Success: ${value}`,
+      err: (error) => new Error(`Mapped: ${error.message}`),
+    });
+
+    expectType<TestTypeIsEqual<typeof result, string | Error>>();
+    expect(result).toBeInstanceOf(Error);
+    expect((result as Error).message).toEqual('Mapped: Cannot divide by zero');
+  });
+
+  test('map with different return types', () => {
+    const successDivision = divide(10, 2);
+
+    const result = successDivision.mapToValue({
+      ok: (value) => value * 2,
+      err: (error) => [error.message],
+    });
+
+    expectType<TestTypeIsEqual<typeof result, number | string[]>>();
+    expect(result).toEqual(10);
+
+    const failureDivision = divide(10, 0);
+
+    const errorResult = failureDivision.mapToValue({
+      ok: (value) => value * 2,
+      err: (error) => [error.message],
+    });
+
+    expectType<TestTypeIsEqual<typeof errorResult, number | string[]>>();
+    expect(errorResult).toEqual(['Cannot divide by zero']);
+  });
+
+  test('map to complex objects', () => {
+    const successDivision = divide(10, 2);
+
+    const result = successDivision.mapToValue({
+      ok: (value) => ({ status: 'success' as const, data: value }),
+      err: (error) => ({ status: 'error' as const, message: error.message }),
+    });
+
+    expectType<
+      TestTypeIsEqual<
+        typeof result,
+        | { status: 'success'; data: number }
+        | { status: 'error'; message: string }
+      >
+    >();
+    expect(result).toEqual({ status: 'success', data: 5 });
+
+    const failureDivision = divide(10, 0);
+
+    const errorResult = failureDivision.mapToValue({
+      ok: (value) => ({ status: 'success', data: value }),
+      err: (error) => ({ status: 'error', message: error.message }),
+    });
+
+    expect(errorResult).toEqual({
+      status: 'error',
+      message: 'Cannot divide by zero',
+    });
+  });
+
+  test('map to boolean values', () => {
+    const successDivision = divide(10, 2);
+
+    const result = successDivision.mapToValue({
+      ok: (value) => value > 0,
+      err: () => ({ failed: true as const }),
+    });
+
+    expectType<TestTypeIsEqual<typeof result, boolean | { failed: true }>>();
+    expect(result).toEqual(true);
+
+    const failureDivision = divide(10, 0);
+
+    const errorResult = failureDivision.mapToValue({
+      ok: (value) => value > 0,
+      err: () => ({ failed: true as const }),
+    });
+
+    expectType<
+      TestTypeIsEqual<typeof errorResult, boolean | { failed: true }>
+    >();
+    expect(errorResult).toEqual({ failed: true });
+  });
+});
+
 describe('Result.asyncMap()', () => {
   test('map ok result', async () => {
     const successDivision = divideAsync(10, 2);
