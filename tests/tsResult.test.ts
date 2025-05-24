@@ -789,15 +789,15 @@ describe('Result.errWithId', () => {
   });
 
   test('inferred usage in function', () => {
-    function foo() {
-      if (Math.random() > 0.5) {
+    function foo(forceErr: boolean) {
+      if (forceErr) {
         return Result.errId('ok');
       }
 
       return Result.ok(1);
     }
 
-    const err = foo();
+    const err = foo(true);
 
     assert(!err.ok);
 
