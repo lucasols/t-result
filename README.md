@@ -358,3 +358,21 @@ processUnknownValue(Result.ok('Hello')); // Success value: Hello
 processUnknownValue(Result.err('Error occurred')); // Error: Error occurred
 processUnknownValue('regular string'); // Not a Result type: regular string
 ```
+
+### Using `Result.errId`
+
+It's not possible to pass a string to `Result.err` because empty strings are falsey. To help overcome this, `Result.errId` can be used to create an `Err` result with an error object containing a unique id.
+
+```typescript
+import { Result } from 't-result';
+
+function foo(): Result<number, { id: 'lessThan0.5' }> {
+  if (Math.random() < 0.5) {
+    return Result.errId('lessThan0.5');
+  }
+
+  return Result.ok(1);
+}
+
+const err = foo();
+```
