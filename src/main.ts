@@ -305,7 +305,7 @@ function asyncMap<T, E extends ResultValidErrors>(
  * @param id - The identifier for the error.
  * @returns An Err result with an error object of the form { id }.
  */
-function errWithId<E extends string>(id: E): Err<{ id: E }> {
+function errId<E extends string>(id: E): Err<{ id: E }> {
   return err({ id });
 }
 
@@ -319,7 +319,7 @@ export const Result: {
   asyncUnwrap: typeof asyncUnwrap;
   asyncMap: typeof asyncMap;
   getOkErr: typeof getOkErr;
-  errWithId: typeof errWithId;
+  errId: typeof errId;
 } = {
   ok,
   err,
@@ -327,7 +327,7 @@ export const Result: {
   asyncUnwrap,
   asyncMap,
   getOkErr,
-  errWithId,
+  errId,
 };
 
 /**

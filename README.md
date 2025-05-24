@@ -8,11 +8,12 @@ A TypeScript implementation of the Result pattern, providing a robust way to han
 
 - **Explicit Success/Failure:** Clearly distinguish between `Ok<T>` (success) and `Err<E>` (failure) states.
 - **Type Safety:** Strong typing for both success values (`T`) and error types (`E`).
-- **Chaining Methods:** Fluent API with methods like `mapOk`, `mapErr`, `unwrapOr`, `ifOk`, `ifErr` for elegant data transformation and error handling.
+- **Chaining Methods:** Fluent API with methods like `mapOk`, `mapErr`, `unwrapOr`, `onOk`, `onErr` for elegant data transformation and error handling.
 - **Error Normalization:** Utilities like `unknownToError` to consistently convert various error types into `Error` objects.
 - **Asynchronous Support:** Helpers for working with `Result` types in asynchronous operations (`Result.asyncUnwrap`, `Result.asyncMap`).
 - **Function Wrapping:** `resultify` function to easily convert existing functions or promises to return `Result` objects.
 - **Typed Helpers:** `getOkErr` to create type-safe `ok` and `err` constructors for specific `Result` signatures.
+- **Type Guards:** `isResult` function to check if a value is a Result type at runtime.
 
 ## Installation
 
@@ -87,8 +88,10 @@ An object of type `Result<T, E>` will have:
 - `mapOk<NewValue>(mapFn: (value: T) => NewValue): Result<NewValue, E>`: If `Ok`, applies `mapFn` to the value and returns a new `Ok<NewValue>`. Otherwise, returns the original `Err<E>`.
 - `mapErr<NewError extends ResultValidErrors>(mapFn: (error: E) => NewError): Result<T, NewError>`: If `Err`, applies `mapFn` to the error and returns a new `Err<NewError>`. Otherwise, returns the original `Ok<T>`.
 - `mapOkAndErr<NewValue, NewError extends ResultValidErrors>(mapFns: { ok: (value: T) => NewValue; err: (error: E) => NewError; }): Result<NewValue, NewError>`: Applies the appropriate mapping function based on whether the result is `Ok` or `Err`.
-- `ifOk(fn: (value: T) => void): Result<T, E>`: If `Ok`, calls `fn` with the value. Returns the original `Result`.
-- `ifErr(fn: (error: E) => void): Result<T, E>`: If `Err`, calls `fn` with the error. Returns the original `Result`.
+- `onOk(fn: (value: T) => void): Result<T, E>`: If `Ok`, calls `fn` with the value. Returns the original `Result`.
+- `onErr(fn: (error: E) => void): Result<T, E>`: If `Err`, calls `fn` with the error. Returns the original `Result`.
+- `ifOk(fn: (value: T) => void): Result<T, E>`: **[DEPRECATED]** Use `onOk` instead. If `Ok`, calls `fn` with the value. Returns the original `Result`.
+- `ifErr(fn: (error: E) => void): Result<T, E>`: **[DEPRECATED]** Use `onErr` instead. If `Err`, calls `fn` with the error. Returns the original `Result`.
 
 ### `ok<T>(value: T): Ok<T>`
 
@@ -106,6 +109,22 @@ Creates an `Err` result, representing a failed operation.
 
 An `Err<E>` object also has an `errorResult(): Err<E>` method that returns a new `Err` result with the same error.
 
+### `isResult(value: unknown): value is Result<any, ResultValidErrors>`
+
+Type guard to check if a value is a `Result` type.
+
+- `value`: The value to check
+- **Returns:** `true` if the value is a `Result`, `false` otherwise
+
+```typescript
+import { isResult } from 't-result';
+
+if (isResult(someValue)) {
+  // someValue is now typed as Result<any, ResultValidErrors>
+  console.log(someValue.ok);
+}
+```
+
 ### `Result` Namespace/Object
 
 A utility object with helper functions:
@@ -119,6 +138,7 @@ A utility object with helper functions:
   - `.err<NewError extends ResultValidErrors>(mapFn: (error: E) => NewError): Promise<Result<T, NewError>>`
   - `.okAndErr<NewValue, NewError extends ResultValidErrors>(mapFns: { ok: (value: T) => NewValue; err: (error: E) => NewError; }): Promise<Result<NewValue, NewError>>`
 - `Result.getOkErr`: See `getOkErr` documentation below.
+- `Result.errId<E extends string>(id: E): Err<{ id: E }>`: Creates an `Err` result with an error object containing a unique id.
 
 ### `resultify`
 
@@ -182,8 +202,8 @@ function parseNumber(input: string): Result<number, string> {
 
 const validResult = parseNumber('123.45');
 validResult
-  .ifOk((value) => console.log(`Parsed: ${value}`)) // Parsed: 123.45
-  .ifErr((error) => console.error(`Error: ${error}`));
+  .onOk((value) => console.log(`Parsed: ${value}`)) // Parsed: 123.45
+  .onErr((error) => console.error(`Error: ${error}`));
 
 const invalidResult = parseNumber('abc');
 const valueOrDefault = invalidResult.unwrapOr(0);
@@ -211,10 +231,10 @@ function riskySyncOperation(shouldFail: boolean): string {
 }
 
 const syncRes = resultify(() => riskySyncOperation(false));
-syncRes.ifOk((val) => console.log(val)); // Sync success!
+syncRes.onOk((val) => console.log(val)); // Sync success!
 
 const failingSyncRes = resultify(() => riskySyncOperation(true));
-failingSyncRes.ifErr((err) => console.error(err.message)); // Sync operation failed!
+failingSyncRes.onErr((err) => console.error(err.message)); // Sync operation failed!
 
 // Asynchronous function / Promise
 async function riskyAsyncOperation(shouldFail: boolean): Promise<string> {
@@ -226,10 +246,10 @@ async function riskyAsyncOperation(shouldFail: boolean): Promise<string> {
 
 async function testAsync() {
   const asyncRes = await resultify(() => riskyAsyncOperation(false));
-  asyncRes.ifOk((val) => console.log(val)); // Async success!
+  asyncRes.onOk((val) => console.log(val)); // Async success!
 
   const failingAsyncRes = await resultify(riskyAsyncOperation(true));
-  failingAsyncRes.ifErr((err) => console.error(err.message)); // Async operation failed!
+  failingAsyncRes.onErr((err) => console.error(err.message)); // Async operation failed!
 
   // With custom error normalization
   class CustomError extends Error {
@@ -248,7 +268,7 @@ async function testAsync() {
       return new CustomError(baseError.message, 500);
     },
   );
-  customErrorRes.ifErr((customErr) =>
+  customErrorRes.onErr((customErr) =>
     console.error(`${customErr.code}: ${customErr.message}`),
   ); // 500: Async operation failed!
 }
@@ -314,4 +334,27 @@ userResult.mapOkAndErr({
   ok: (user) => console.log(`Fetched user: ${user.name}`),
   err: (error) => console.error(`Error (${error.type}): ${error.message}`),
 });
+```
+
+### Using `isResult` Type Guard
+
+```typescript
+import { isResult, Result } from 't-result';
+
+function processUnknownValue(value: unknown) {
+  if (isResult(value)) {
+    // value is now typed as Result<any, ResultValidErrors>
+    if (value.ok) {
+      console.log('Success value:', value.value);
+    } else {
+      console.error('Error:', value.error);
+    }
+  } else {
+    console.log('Not a Result type:', value);
+  }
+}
+
+processUnknownValue(Result.ok('Hello')); // Success value: Hello
+processUnknownValue(Result.err('Error occurred')); // Error: Error occurred
+processUnknownValue('regular string'); // Not a Result type: regular string
 ```
