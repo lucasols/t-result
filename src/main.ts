@@ -66,7 +66,7 @@ type ResultMethods<T, E extends ResultValidErrors> = {
   /** Calls a function if the result is Err */
   onErr: (fn: (error: E) => void) => Result<T, E>;
   /** Maps the value or error to a value */
-  mapToValue: <NewValue, NewError extends ResultValidErrors>(mapFns: {
+  mapToValue: <NewValue, NewError>(mapFns: {
     ok: (value: T) => NewValue;
     err: (error: E) => NewError;
   }) => NewValue | NewError;
@@ -144,12 +144,7 @@ function mapOkAndErr<
   return this.ok ? ok(mapFn(this.value)) : err(mapErrFn(this.error));
 }
 
-function mapToValue<
-  T,
-  E extends ResultValidErrors,
-  NewValue,
-  NewError extends ResultValidErrors,
->(
+function mapToValue<T, E extends ResultValidErrors, NewValue, NewError>(
   this: Result<T, E>,
   {
     ok: mapFn,

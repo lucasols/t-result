@@ -377,6 +377,18 @@ describe('Result.mapToValue()', () => {
     >();
     expect(errorResult).toEqual({ failed: true });
   });
+
+  test('mapped error should allow any error type', () => {
+    const successDivision = divide(10, 2);
+
+    const result = successDivision.mapToValue({
+      ok: (value) => value * 2,
+      err: () => 'error',
+    });
+
+    expectTypesAre<typeof result, number | string>('equal');
+    expect(result).toEqual(10);
+  });
 });
 
 describe('Result.asyncMap()', () => {
