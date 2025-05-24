@@ -309,9 +309,6 @@ function errId<E extends string>(id: E): Err<{ id: E }> {
   return err({ id });
 }
 
-/**
- * Namespace object containing all Result utility functions
- */
 export const Result: {
   ok: typeof ok;
   err: typeof err;

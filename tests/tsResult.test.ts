@@ -7,7 +7,7 @@ import {
   typingTest,
   type TestTypeIsEqual,
 } from '@ls-stack/utils/typingTestUtils';
-import { describe, expect, test } from 'vitest';
+import { assert, describe, expect, test } from 'vitest';
 import {
   isResult,
   Result,
@@ -666,7 +666,7 @@ test('isResult', () => {
 
 describe('Result.errWithId', () => {
   test('should return an Err with the id', () => {
-    const err = Result.errWithId('test');
+    const err = Result.errId('test');
 
     expectTypesAre<typeof err.error, { id: 'test' }>('equal');
 
@@ -675,7 +675,7 @@ describe('Result.errWithId', () => {
 
   test('usage in function', () => {
     function foo(id: string): Result<number, { id: string }> {
-      return Result.errWithId(id);
+      return Result.errId(id);
     }
 
     const err = foo('test');
@@ -683,5 +683,23 @@ describe('Result.errWithId', () => {
     expect(err.error).toEqual({ id: 'test' });
 
     expectTypesAre<typeof err, Result<number, { id: string }>>('equal');
+  });
+
+  test('inferred usage in function', () => {
+    function foo() {
+      if (Math.random() > 0.5) {
+        return Result.errId('ok');
+      }
+
+      return Result.ok(1);
+    }
+
+    const err = foo();
+
+    assert(!err.ok);
+
+    expect(err.error).toEqual({ id: 'ok' });
+
+    expectTypesAre<typeof err.error, { id: 'ok' }>('equal');
   });
 });
