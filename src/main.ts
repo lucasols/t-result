@@ -1,6 +1,10 @@
 import { isFunction, isObject, isPromise } from '@ls-stack/utils/assertions';
 import { safeJsonStringify } from '@ls-stack/utils/safeJson';
 
+/**
+ * Represents a successful result containing a value
+ * @template T - The type of the success value
+ */
 type Ok<T> = {
   ok: true;
   error: false;
@@ -9,6 +13,9 @@ type Ok<T> = {
 
 type AnyResultMethods = Record<ResultMethodsKeys, never>;
 
+/**
+ * Valid error types that can be used in Result error states
+ */
 export type ResultValidErrors =
   | Error
   | Record<string, unknown>
@@ -16,6 +23,10 @@ export type ResultValidErrors =
   | readonly unknown[]
   | true;
 
+/**
+ * Represents a failed result containing an error
+ * @template E - The type of the error value
+ */
 type Err<E extends ResultValidErrors> = {
   ok: false;
   error: E;
@@ -23,6 +34,11 @@ type Err<E extends ResultValidErrors> = {
   errorResult: () => Err<E>;
 } & AnyResultMethods;
 
+/**
+ * Methods available on all Result instances for chaining and manipulation
+ * @template T - The type of the success value
+ * @template E - The type of the error value
+ */
 type ResultMethods<T, E extends ResultValidErrors> = {
   /** Returns the value if the result is Ok, otherwise returns null */
   unwrapOrNull: () => T | null;
@@ -72,6 +88,9 @@ type ResultMethods<T, E extends ResultValidErrors> = {
  * } else {
  *   // result.error is an Error
  * }
+ *
+ * @template T - The type of the success value
+ * @template E - The type of the error value, defaults to Error
  */
 export type Result<T, E extends ResultValidErrors = Error> = (
   | Omit<Ok<T>, ResultMethodsKeys>
@@ -213,11 +232,21 @@ export function err<E extends ResultValidErrors>(error: E): Err<E> {
   };
 }
 
+/**
+ * Converts an unknown error value into an Err result
+ * @param error - The unknown error value
+ * @returns An Err result containing an Error instance
+ */
 function unknownToResultError(error: unknown): Err<Error> {
   return err(unknownToError(error));
 }
 
-/** Unwraps a promise result */
+/**
+ * Unwraps a promise result by awaiting it and returning the value or throwing the error
+ * @template T - The type of the success value
+ * @param result - Promise containing a Result
+ * @returns Promise that resolves to the unwrapped value or rejects with the error
+ */
 async function asyncUnwrap<T>(
   result: Promise<Result<T, ResultValidErrors>>,
 ): Promise<T> {
@@ -234,6 +263,13 @@ async function asyncUnwrap<T>(
   throw unknownToError(unwrapped.error);
 }
 
+/**
+ * Provides mapping functions for async Result operations
+ * @template T - The type of the success value
+ * @template E - The type of the error value
+ * @param resultPromise - Promise containing a Result
+ * @returns Object with mapping methods for async operations
+ */
 function asyncMap<T, E extends ResultValidErrors>(
   resultPromise: Promise<Result<T, E>>,
 ) {
@@ -263,6 +299,19 @@ function asyncMap<T, E extends ResultValidErrors>(
   };
 }
 
+/**
+ * Creates an Err result with an error object containing a unique id.
+ *
+ * @param id - The identifier for the error.
+ * @returns An Err result with an error object of the form { id }.
+ */
+function errWithId<E extends string>(id: E): Err<{ id: E }> {
+  return err({ id });
+}
+
+/**
+ * Namespace object containing all Result utility functions
+ */
 export const Result: {
   ok: typeof ok;
   err: typeof err;
@@ -270,6 +319,7 @@ export const Result: {
   asyncUnwrap: typeof asyncUnwrap;
   asyncMap: typeof asyncMap;
   getOkErr: typeof getOkErr;
+  errWithId: typeof errWithId;
 } = {
   ok,
   err,
@@ -277,6 +327,7 @@ export const Result: {
   asyncUnwrap,
   asyncMap,
   getOkErr,
+  errWithId,
 };
 
 /**
@@ -385,6 +436,11 @@ export function unknownToError(error: unknown): Error {
   });
 }
 
+/**
+ * Type helper for creating typed Result functions with specific value and error types
+ * @template T - The type of the success value
+ * @template E - The type of the error value
+ */
 export type TypedResult<T, E extends ResultValidErrors = Error> = {
   ok: (value: T) => Ok<T>;
   err: (error: E) => Err<E>;
@@ -401,6 +457,10 @@ export type TypedResult<T, E extends ResultValidErrors = Error> = {
   _type: Result<T, E>;
 };
 
+/**
+ * Utility type to extract the TypedResult from a Result type
+ * @template R - A Result type to extract types from
+ */
 export type GetTypedResult<R extends Result<any, any>> = TypedResult<
   R extends Result<infer T, any> ? T : never,
   R extends Result<any, infer E> ? E : never
@@ -414,27 +474,58 @@ const typedResult: TypedResult<any, any> = {
   },
 };
 
+/**
+ * Creates a typed result helper for functions returning Promise<Result>
+ * @template F - Function type that returns Promise<Result>
+ * @returns TypedResult with extracted types from the function's return type
+ */
 function getOkErr<
   F extends (...args: any[]) => Promise<Result<any, any>>,
 >(): TypedResult<
   Awaited<ReturnType<F>> extends Result<infer T, any> ? T : never,
   Awaited<ReturnType<F>> extends Result<any, infer E> ? E : never
 >;
+/**
+ * Creates a typed result helper for functions returning Result
+ * @template F - Function type that returns Result
+ * @returns TypedResult with extracted types from the function's return type
+ */
 function getOkErr<
   F extends (...args: any[]) => Result<any, any>,
 >(): TypedResult<
   ReturnType<F> extends Result<infer T, any> ? T : never,
   ReturnType<F> extends Result<any, infer E> ? E : never
 >;
+/**
+ * Creates a typed result helper from a Result type
+ * @template R - A Result type
+ * @returns TypedResult with extracted types from the Result type
+ */
 function getOkErr<R extends Result<any, any>>(): TypedResult<
   R extends Result<infer T, any> ? T : never,
   R extends Result<any, infer E> ? E : never
 >;
+/**
+ * Creates a typed result helper with explicit types
+ * @template T - The success value type
+ * @template E - The error value type
+ * @returns TypedResult with the specified types
+ */
 function getOkErr<T, E extends ResultValidErrors = Error>(): TypedResult<T, E>;
 function getOkErr(): unknown {
   return typedResult;
 }
 
+/**
+ * Type guard to check if a value is a Result
+ * @param value - The value to check
+ * @returns True if the value is a Result, false otherwise
+ * @example
+ * if (isResult(someValue)) {
+ *   // someValue is now typed as Result<any, ResultValidErrors>
+ *   console.log(someValue.ok);
+ * }
+ */
 export function isResult(
   value: unknown,
 ): value is Result<any, ResultValidErrors> {

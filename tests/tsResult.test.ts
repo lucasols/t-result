@@ -16,7 +16,7 @@ import {
   type ResultValidErrors,
 } from '../src/main';
 
-const { expectType } = typingTest;
+const { expectType, expectTypesAre } = typingTest;
 
 function divide(a: number, b: number): Result<number> {
   if (b === 0) {
@@ -662,4 +662,26 @@ test('isResult', () => {
       TestTypeIsEqual<typeof result, Result<any, ResultValidErrors>>
     >();
   }
+});
+
+describe('Result.errWithId', () => {
+  test('should return an Err with the id', () => {
+    const err = Result.errWithId('test');
+
+    expectTypesAre<typeof err.error, { id: 'test' }>('equal');
+
+    expect(err.error.id).toEqual('test');
+  });
+
+  test('usage in function', () => {
+    function foo(id: string): Result<number, { id: string }> {
+      return Result.errWithId(id);
+    }
+
+    const err = foo('test');
+
+    expect(err.error).toEqual({ id: 'test' });
+
+    expectTypesAre<typeof err, Result<number, { id: string }>>('equal');
+  });
 });
