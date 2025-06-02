@@ -476,7 +476,7 @@ const typedResult: TypedResult<any, any> = {
  * @template F - Function type that returns Promise<Result>
  * @returns TypedResult with extracted types from the function's return type
  */
-function getOkErr<
+export function getOkErr<
   F extends (...args: any[]) => Promise<Result<any, any>>,
 >(): TypedResult<
   Awaited<ReturnType<F>> extends Result<infer T, any> ? T : never,
@@ -487,7 +487,7 @@ function getOkErr<
  * @template F - Function type that returns Result
  * @returns TypedResult with extracted types from the function's return type
  */
-function getOkErr<
+export function getOkErr<
   F extends (...args: any[]) => Result<any, any>,
 >(): TypedResult<
   ReturnType<F> extends Result<infer T, any> ? T : never,
@@ -498,7 +498,7 @@ function getOkErr<
  * @template R - A Result type
  * @returns TypedResult with extracted types from the Result type
  */
-function getOkErr<R extends Result<any, any>>(): TypedResult<
+export function getOkErr<R extends Result<any, any>>(): TypedResult<
   R extends Result<infer T, any> ? T : never,
   R extends Result<any, infer E> ? E : never
 >;
@@ -508,8 +508,11 @@ function getOkErr<R extends Result<any, any>>(): TypedResult<
  * @template E - The error value type
  * @returns TypedResult with the specified types
  */
-function getOkErr<T, E extends ResultValidErrors = Error>(): TypedResult<T, E>;
-function getOkErr(): unknown {
+export function getOkErr<T, E extends ResultValidErrors = Error>(): TypedResult<
+  T,
+  E
+>;
+export function getOkErr(): unknown {
   return typedResult;
 }
 
