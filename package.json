@@ -1,6 +1,6 @@
 {
   "name": "t-result",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "license": "MIT",
   "scripts": {
     "lint": "pnpm tsc && pnpm eslint && pnpm format",
