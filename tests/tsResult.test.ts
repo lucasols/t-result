@@ -776,4 +776,50 @@ describe('Result.safeFn()', () => {
       ) => Result<{ a: number; b: string; c: boolean }, Error>
     >('equal');
   });
+
+  test('works with async functions', async () => {
+    const asyncDivisionFn = Result.safeFn(async (n: number) => {
+      await sleep(10);
+      if (n === 0) throw new Error('Cannot divide by zero');
+      return n;
+    });
+
+    const result = await asyncDivisionFn(1);
+
+    assert(result.ok);
+    expect(result.value).toBe(1);
+
+    expectTypesAre<
+      typeof asyncDivisionFn,
+      (n: number) => Promise<Result<number, Error>>
+    >('equal');
+
+    const result2 = await asyncDivisionFn(0);
+    assert(!result2.ok);
+    expect(result2.error.message).toBe('Cannot divide by zero');
+  });
+
+  test('works with async functions and custom error normalizer', async () => {
+    const asyncDivisionFn = Result.safeFn(
+      async (n: number) => {
+        await sleep(10);
+        if (n === 0) throw new Error('Cannot divide by zero');
+        return n;
+      },
+      (err) => ({ type: 'parse_error', cause: err }),
+    );
+
+    const result = await asyncDivisionFn(1);
+    assert(result.ok);
+    expect(result.value).toBe(1);
+
+    const result2 = await asyncDivisionFn(0);
+    assert(!result2.ok);
+    expect(result2.error.type).toBe('parse_error');
+
+    expectTypesAre<
+      typeof asyncDivisionFn,
+      (n: number) => Promise<Result<number, { type: string; cause: unknown }>>
+    >('equal');
+  });
 });

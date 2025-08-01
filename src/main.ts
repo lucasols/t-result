@@ -313,22 +313,53 @@ function errId<E extends string>(id: E): Err<{ id: E }> {
  * Creates a function that returns a safe Result
  */
 function safeFn<Args extends any[], Return>(
-  fn: (...args: Args) => Return,
+  fn: (...args: Args) => Return extends Promise<any> ? never : Return,
 ): (...args: Args) => Result<Return, Error>;
 /**
  * Creates a function that returns a safe Result with a custom error normalizer
  */
 function safeFn<Args extends any[], Return, E extends ResultValidErrors>(
-  fn: (...args: Args) => Return,
+  fn: (...args: Args) => Return extends Promise<any> ? never : Return,
   errorNormalizer: (err: unknown) => E,
 ): (...args: Args) => Result<Return, E>;
+/**
+ * Creates a async function that returns a safe Promise<Result>
+ */
 function safeFn<Args extends any[], Return>(
-  fn: (...args: Args) => Return,
+  fn: (...args: Args) => Promise<Return>,
+): (...args: Args) => Promise<Result<Awaited<Return>, Error>>;
+/**
+ * Creates a function that returns a safe Promise<Result> with a custom error normalizer
+ */
+function safeFn<Args extends any[], Return, E extends ResultValidErrors>(
+  fn: (...args: Args) => Promise<Return>,
+  errorNormalizer: (err: unknown) => E,
+): (...args: Args) => Promise<Result<Awaited<Return>, E>>;
+function safeFn<Args extends any[], Return>(
+  fn: (...args: Args) => Return | Promise<Return>,
   errorNormalizer?: (err: unknown) => ResultValidErrors,
-): (...args: Args) => Result<Return, ResultValidErrors> {
+): (
+  ...args: Args
+) =>
+  | Result<Return, ResultValidErrors>
+  | Promise<Result<Return, ResultValidErrors>> {
   return (...args) => {
     try {
-      return ok(fn(...args));
+      const result = fn(...args);
+
+      if (isPromise(result)) {
+        return result
+          .then((value) => ok(value))
+          .catch((error) =>
+            err(
+              errorNormalizer ?
+                errorNormalizer(error)
+              : (unknownToError(error) as unknown as ResultValidErrors),
+            ),
+          );
+      }
+
+      return ok(result);
     } catch (error) {
       return err(
         errorNormalizer ?
