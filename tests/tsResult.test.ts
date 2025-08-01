@@ -703,3 +703,77 @@ describe('Result.errWithId', () => {
     expectTypesAre<typeof err.error, { id: 'ok' }>('equal');
   });
 });
+
+describe('Result.safeFn()', () => {
+  test('basic functionality', () => {
+    const divideFn = Result.safeFn((a: number, b: number) => {
+      if (b === 0) throw new Error('Cannot divide by zero');
+      return a / b;
+    });
+
+    expect(divideFn(10, 2)).toEqual(Result.ok(5));
+    expect(divideFn(10, 0).ok).toBe(false);
+  });
+
+  test('different return types', () => {
+    const stringFn = Result.safeFn((value: number) => `Value: ${value}`);
+    const objectFn = Result.safeFn((name: string) => ({ name, age: 25 }));
+    const voidFn = Result.safeFn(() => undefined);
+
+    expect(stringFn(42)).toEqual(Result.ok('Value: 42'));
+    expect(objectFn('John')).toEqual(Result.ok({ name: 'John', age: 25 }));
+    expect(voidFn()).toEqual(Result.ok(undefined));
+  });
+
+  test('handles different error types', () => {
+    const throwString = Result.safeFn(() => {
+      throw 'string error';
+    });
+    const throwObject = Result.safeFn(() => {
+      throw { message: 'object error' };
+    });
+    const throwNumber = Result.safeFn(() => {
+      throw 42;
+    });
+
+    expect(throwString().ok).toBe(false);
+    expect(throwObject().ok).toBe(false);
+    expect(throwNumber().ok).toBe(false);
+  });
+
+  test('custom error normalizer', () => {
+    const parseJsonFn = Result.safeFn(
+      (json: string) => JSON.parse(json),
+      (error) => ({ type: 'parse_error', cause: error }),
+    );
+
+    expect(parseJsonFn('{"valid": true}')).toEqual(Result.ok({ valid: true }));
+
+    const result = parseJsonFn('invalid');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.type).toBe('parse_error');
+    }
+  });
+
+  test('preserves function signatures', () => {
+    const multiParamFn = Result.safeFn((a: number, b: string, c: boolean) => ({
+      a,
+      b,
+      c,
+    }));
+
+    expect(multiParamFn(1, 'test', true)).toEqual(
+      Result.ok({ a: 1, b: 'test', c: true }),
+    );
+
+    expectTypesAre<
+      typeof multiParamFn,
+      (
+        a: number,
+        b: string,
+        c: boolean,
+      ) => Result<{ a: number; b: string; c: boolean }, Error>
+    >('equal');
+  });
+});

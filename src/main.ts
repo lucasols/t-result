@@ -309,6 +309,36 @@ function errId<E extends string>(id: E): Err<{ id: E }> {
   return err({ id });
 }
 
+/**
+ * Creates a function that returns a safe Result
+ */
+function safeFn<Args extends any[], Return>(
+  fn: (...args: Args) => Return,
+): (...args: Args) => Result<Return, Error>;
+/**
+ * Creates a function that returns a safe Result with a custom error normalizer
+ */
+function safeFn<Args extends any[], Return, E extends ResultValidErrors>(
+  fn: (...args: Args) => Return,
+  errorNormalizer: (err: unknown) => E,
+): (...args: Args) => Result<Return, E>;
+function safeFn<Args extends any[], Return>(
+  fn: (...args: Args) => Return,
+  errorNormalizer?: (err: unknown) => ResultValidErrors,
+): (...args: Args) => Result<Return, ResultValidErrors> {
+  return (...args) => {
+    try {
+      return ok(fn(...args));
+    } catch (error) {
+      return err(
+        errorNormalizer ?
+          errorNormalizer(error)
+        : (unknownToError(error) as unknown as ResultValidErrors),
+      );
+    }
+  };
+}
+
 export const Result: {
   ok: typeof ok;
   err: typeof err;
@@ -317,6 +347,7 @@ export const Result: {
   asyncMap: typeof asyncMap;
   getOkErr: typeof getOkErr;
   errId: typeof errId;
+  safeFn: typeof safeFn;
 } = {
   ok,
   err,
@@ -325,28 +356,45 @@ export const Result: {
   asyncMap,
   getOkErr,
   errId,
+  safeFn,
 };
 
 /**
- * Converts a function response into a Result<T, E>
+ * Converts a function response into a Result<T, Error>
  */
-export function resultify<T, E extends ResultValidErrors = Error>(
+export function resultify<T>(
   fn: () => T extends Promise<any> ? never : T,
-  errorNormalizer?: (err: unknown) => E,
+): Result<T, Error>;
+/**
+ * Converts a function response into a Result<T, Error> with a custom error normalizer
+ */
+export function resultify<T, E extends ResultValidErrors>(
+  fn: () => T extends Promise<any> ? never : T,
+  errorNormalizer: (err: unknown) => E,
 ): Result<T, E>;
 /**
- * Converts a promise response into a Result<T, E>
+ * Converts a promise response into a Result<T, Error>
  */
-export function resultify<T, E extends ResultValidErrors = Error>(
+export function resultify<T>(
   fn: () => Promise<T>,
-  errorNormalizer?: (err: unknown) => E,
+): Promise<Result<Awaited<T>, Error>>;
+/**
+ * Converts a promise response into a Result<T, E> with a custom error normalizer
+ */
+export function resultify<T, E extends ResultValidErrors>(
+  fn: () => Promise<T>,
+  errorNormalizer: (err: unknown) => E,
 ): Promise<Result<Awaited<T>, E>>;
 /**
- * Converts a promise response into a Result<T, E>
+ * Converts a promise response into a Result<T, Error>
  */
-export function resultify<T, E extends ResultValidErrors = Error>(
+export function resultify<T>(fn: Promise<T>): Promise<Result<T, Error>>;
+/**
+ * Converts a promise response into a Result<T, E> with a custom error normalizer
+ */
+export function resultify<T, E extends ResultValidErrors>(
   fn: Promise<T>,
-  errorNormalizer?: (err: unknown) => E,
+  errorNormalizer: (err: unknown) => E,
 ): Promise<Result<T, E>>;
 export function resultify(
   fn: (() => unknown) | Promise<unknown>,
