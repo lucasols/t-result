@@ -276,6 +276,34 @@ async function testAsync() {
 testAsync();
 ```
 
+### Using `Result.safeFn`
+
+```ts
+import { Result } from 't-result';
+
+const divide = Result.safeFn((a: number, b: number) => {
+  if (b === 0) throw new Error('Cannot divide by zero');
+  return a / b;
+});
+
+const result = divide(10, 0); // Result<number, Error>
+
+// with custom error normalizer
+const divide = Result.safeFn(
+  (a: number, b: number) => {
+    if (b === 0) throw new Error('Cannot divide by zero');
+    return a / b;
+  },
+  (err) => {
+    return {
+      message: err instanceof Error ? err.message : 'Unknown error',
+    };
+  },
+);
+
+const result = divide(10, 0); // Result<number, { message: string }>
+```
+
 ### Using `unknownToError`
 
 ```typescript
