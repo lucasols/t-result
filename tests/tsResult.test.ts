@@ -848,7 +848,9 @@ test('unknown result argument', () => {
   addResultCb(() => resultFn<number>());
   addResultCb(() => resultFn<string>());
 
-  function addResultPromiseCb(cb: () => Promise<Result<unknown, true>>) {
+  function addResultPromiseCb(
+    cb: () => Promise<Result<unknown, true>> | Result<unknown, true>,
+  ) {
     const r = cb();
     return r;
   }
