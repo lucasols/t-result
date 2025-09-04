@@ -823,3 +823,38 @@ describe('Result.safeFn()', () => {
     >('equal');
   });
 });
+
+test('unknown result argument', () => {
+  function addResult(result: Result<unknown, true>) {
+    return result.ok ? result.value : result.error;
+  }
+
+  function resultFn<R, E extends ResultValidErrors = true>(): Result<R, E> {
+    return Result.ok(1 as any);
+  }
+
+  function asyncResult<R>(): Promise<Result<R, true>> {
+    return Promise.resolve(Result.ok(1 as any));
+  }
+
+  addResult(resultFn<number, true>());
+  addResult(resultFn<string, true>());
+
+  function addResultCb(cb: () => Result<unknown, true>) {
+    const r = cb();
+    return r;
+  }
+
+  addResultCb(() => resultFn<number>());
+  addResultCb(() => resultFn<string>());
+
+  function addResultPromiseCb(cb: () => Promise<Result<unknown, true>>) {
+    const r = cb();
+    return r;
+  }
+
+  void addResultPromiseCb(() => asyncResult<number>());
+  void addResultPromiseCb(() => asyncResult<string>());
+
+  expect(true).toBe(true);
+});
